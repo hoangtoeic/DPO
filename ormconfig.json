@@ -1,0 +1,11 @@
+{
+  "type": "postgres",
+  "host": "",
+  "port": 5432,
+  "username": "postgres",
+  "password": "",
+  "database": "ambulib",
+  "synchronize": false,
+  "logging": false,
+  "entities": ["src/**/*.entity{.ts,.js}"]
+}

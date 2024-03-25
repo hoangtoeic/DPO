@@ -1,0 +1,41 @@
+image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
+
+services:
+  - name: docker:dind
+    alias: thedockerhost
+
+stages:
+  - test
+  - build_image_and_deploy
+
+variables:
+  TASK_DEFINITION_NAME: ambulife-task-definition
+  AWS_ACCESS_KEY_ID: 
+  AWS_DEFAULT_REGION: eu-west-3
+  AWS_SECRET_ACCESS_KEY: 
+  CLUSTER_NAME: ambulife
+  ECR_REPO_URL: 
+  SERVICE_NAME: ambulife
+  DOCKER_HOST: tcp://thedockerhost:2375/
+    # Use the overlayfs driver for improved performance:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ''
+
+test:
+  stage: test
+  script:
+    - echo "Update testing flow in the future"
+  only:
+    - develop
+
+build_image_and_deploy:
+  stage: build_image_and_deploy
+  script:
+    - docker build -t ambulife .
+    - docker tag ambulife:latest 058264279637.dkr.ecr.eu-west-3.amazonaws.com/ambulife:latest
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set default.region $AWS_DEFAULT_REGION
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URL
+    - docker push 058264279637.dkr.ecr.eu-west-3.amazonaws.com/ambulife:latest
+    - aws ecs update-service --region "eu-west-3" --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition "ambulife-task-definition:1" --force-new-deployment
